@@ -456,22 +456,20 @@ public class Linea {
             if(codigo.modosDir.get(i).tipo.equals("IDX"))
             {
                 // no hay sustituciones en el cod maq??? se gurada completo??
-                if(DirIndexado())
+                value = DirIndexado();
+                if(value!= Integer.MIN_VALUE)
                 {
+                    String sub[];
                     tam = codigo.modosDir.get(i).tamanho;
                     codMaq = codigo.modosDir.get(i).codMaq;
-                    break;
-                }
-                if(DirIdxI_D())
-                {
-                    tam = codigo.modosDir.get(i).tamanho;
-                    codMaq = codigo.modosDir.get(i).codMaq;
-                    break;
-                }
-                if(DirIdxAcum())
-                {
-                    tam = codigo.modosDir.get(i).tamanho;
-                    codMaq = codigo.modosDir.get(i).codMaq;
+                    sub = operando.split(",");
+                    String result = Integer.toBinaryString(value);
+                    result = CompletaBinario(value, result, 5);
+                    result= sustituirRegistro(sub[1])+"0"+result;
+                    int fin = Integer.parseInt(result,2);
+                    result = Integer.toHexString(fin);
+                    codMaq = codMaq.substring(0, 2)+ result;
+                    
                     break;
                 }
             }
@@ -602,16 +600,21 @@ public class Linea {
         return Integer.MIN_VALUE;
     }
     
-    private boolean DirIndexado()
+    private int DirIndexado()
     {
-        String ERIndexado = "(-{0,1}\\d{1,3}){0,1},([a-z]|[A-Z]){0,1}";
+        String ERIndexado = "(-{0,1}\\d{1,3}){0,1},([xX]|[yY]|sp|SP|pc|PC){0,1}";
         if(operando.matches(ERIndexado)){
-            dir = "IDX";
-            tamanho = "2";
-            tam = 2;
-            return true;
+            String sub[];
+            sub = operando.split(",");
+            int res = Integer.parseInt(sub[0]);
+            if(res>=-16 && res<=15){
+                dir = "IDX";
+                //tamanho = "2";
+                //tam = 2;
+                return res;
+            }
         }
-        return false;
+        return Integer.MIN_VALUE;
     }
     private boolean DirIdxI_D()
     {
@@ -679,6 +682,14 @@ public class Linea {
         }
         return false;
     }
+    public String CompletaBinario(int value, String x, int t){
+        String ret = "";
+        String completar = ((value >= 0)?"0":"1");
+        for(int i = 0; i < (t - x.length()); i++)
+            ret = ret + completar;
+        ret = ret + x;
+        return ret;
+    }
     public String completarHexadecimal(String x, int t)
     {
         String ret = "";
@@ -706,6 +717,18 @@ public class Linea {
                 break;
         }
         return res;
+    }
+    
+    public String sustituirRegistro(String x){
+        if(x.equals("x")||x.equals("X"))
+            return "00";
+        if(x.equals("y")||x.equals("Y"))
+            return "01";
+        if(x.equals("sp")||x.equals("SP"))
+            return "10";
+        if(x.equals("pc")||x.equals("PC"))
+            return "11";
+        return "";
     }
     public String imprimirComandosCortos()
     {
