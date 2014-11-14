@@ -456,22 +456,20 @@ public class Linea {
             if(codigo.modosDir.get(i).tipo.equals("IDX"))
             {
                 // no hay sustituciones en el cod maq??? se gurada completo??
-                if(DirIndexado())
+                value = DirIndexado();
+                if(value!= Integer.MIN_VALUE)
                 {
+                    String sub[];
                     tam = codigo.modosDir.get(i).tamanho;
                     codMaq = codigo.modosDir.get(i).codMaq;
-                    break;
-                }
-                if(DirIdxI_D())
-                {
-                    tam = codigo.modosDir.get(i).tamanho;
-                    codMaq = codigo.modosDir.get(i).codMaq;
-                    break;
-                }
-                if(DirIdxAcum())
-                {
-                    tam = codigo.modosDir.get(i).tamanho;
-                    codMaq = codigo.modosDir.get(i).codMaq;
+                    sub = operando.split(",");
+                    String result = Integer.toBinaryString(value);
+                    result = CompletaBinario(value, result, 5);
+                    result= sustituirRegistro(sub[1])+"0"+result;
+                    int fin = Integer.parseInt(result,2);
+                    result = Integer.toHexString(fin);
+                    codMaq = codMaq.substring(0, 2)+ result;
+                    
                     break;
                 }
             }
@@ -492,22 +490,39 @@ public class Linea {
                     codMaq = codigo.modosDir.get(i).codMaq;
                     break;
                 }
+                
             }
             if(codigo.modosDir.get(i).tipo.equals("[IDX2]"))
             {
-                if(DirIdxInd())
+                value = DirIdxInd();
+                if(value != Integer.MIN_VALUE)
                 {
+                    String sub[];
                     tam = codigo.modosDir.get(i).tamanho;
                     codMaq = codigo.modosDir.get(i).codMaq;
+                    sub = operando.split(",");
+                    String resultHex = Integer.toHexString(value);
+                    resultHex = completarHexadecimal(resultHex, 2);
+                    String result = "111"+ sustituirRegistro(sub[1].substring(0, sub[1].length()-1))+"011";
+                    int fin = Integer.parseInt(result,2);
+                    result = Integer.toHexString(fin);
+                    codMaq = codMaq.substring(0, 2)+result+resultHex;
                     break;
                 }
             }
             if(codigo.modosDir.get(i).tipo.equals("[D,IDX]"))
             {
-                if(DirIdxAcumD())
+                value = DirIdxAcumD();
+                if(value != Integer.MIN_VALUE)
                 {
+                    String sub[];
                     tam = codigo.modosDir.get(i).tamanho;
                     codMaq = codigo.modosDir.get(i).codMaq;
+                    sub = operando.split(",");
+                    String result = "111"+ sustituirRegistro(sub[1].substring(0, sub[1].length()-1))+"111";
+                    int fin = Integer.parseInt(result,2);
+                    result = Integer.toHexString(fin);
+                    codMaq = codMaq.substring(0, 2)+result;
                     break;
                 }
             }      
@@ -602,17 +617,23 @@ public class Linea {
         return Integer.MIN_VALUE;
     }
     
-    private boolean DirIndexado()
+    private int DirIndexado()
     {
-        String ERIndexado = "(-{0,1}\\d{1,3}){0,1},([a-z]|[A-Z]){0,1}";
+        String ERIndexado = "(-{0,1}\\d{1,3}){0,1},([xX]|[yY]|sp|SP|pc|PC){0,1}";
         if(operando.matches(ERIndexado)){
-            dir = "IDX";
-            tamanho = "2";
-            tam = 2;
-            return true;
+            String sub[];
+            sub = operando.split(",");
+            int res = Integer.parseInt(sub[0]);
+            if(res>=-16 && res<=15){
+                dir = "IDX";
+                //tamanho = "2";
+                //tam = 2;
+                return res;
+            }
         }
-        return false;
+        return Integer.MIN_VALUE;
     }
+    
     private boolean DirIdxI_D()
     {
         String ERIdxI_D = "^([1-8])(,)(-|\\+){0,1}([xX]|[yY]|sp|SP)(-|\\+){0,1}";
@@ -651,33 +672,52 @@ public class Linea {
         String ERIdx2 = "(\\d{3,5}|-|,|)(\\d{3,5})(,){0,1}([xX]|[yY]|sp|SP|pc|PC)";
         if(operando.matches(ERIdx2)){
             dir = "IDX2";
-            tamanho = "4";
-            tam = 4;
-            return true;
+            tamanho = "2";
+            tam = 2;
+                return true;
         }
         return false;
     }
-    private boolean DirIdxInd()
+    private int DirIdxInd()
     {
         String ERIdxInd = "^\\[(\\d{0,5}|,|)(\\d|[a-z]|[A-Z]){1,2},{0,1}([xX]|[yY]|sp|SP|pc|PC)\\]";
         if(operando.matches(ERIdxInd)){
-            dir = "[IDX2]";
-            tamanho = "4";
-            tam = 4;
-            return true;
+            String sub[];
+            sub = operando.split(",");
+            int res = Integer.parseInt(sub[0].substring(1, sub[0].length()));
+            if(res>= 0 && res <= 65535){
+                dir = "[IDX2]";
+                //tamanho = "2";
+                //tam = 2;
+                return res;
+            }
         }
-        return false;
+        return Integer.MIN_VALUE;
     }    
-    private boolean DirIdxAcumD()
+    private int DirIdxAcumD()
     {
         String ERIdxAcumD   = "^(\\[)([d|D])(,)([xX]|[yY]|sp|SP|pc|PC)(\\])";
         if(operando.matches(ERIdxAcumD)){
-            dir = "[D,IDX]";
-            tamanho = "4";
-            tam = 4;
-            return true;
+            String sub[];
+            sub = operando.split(",");
+            String res = sub[0].substring(1, sub[0].length());
+            if(res.matches("D")){
+                int valor = 1;
+                dir = "[D,IDX]";
+                //tamanho = "2";
+                //tam = 2;
+                return valor;
+            }
         }
-        return false;
+        return Integer.MIN_VALUE;
+    }
+    public String CompletaBinario(int value, String x, int t){
+        String ret = "";
+        String completar = ((value >= 0)?"0":"1");
+        for(int i = 0; i < (t - x.length()); i++)
+            ret = ret + completar;
+        ret = ret + x;
+        return ret;
     }
     public String completarHexadecimal(String x, int t)
     {
@@ -706,6 +746,18 @@ public class Linea {
                 break;
         }
         return res;
+    }
+    
+    public String sustituirRegistro(String x){
+        if(x.equals("x")||x.equals("X"))
+            return "00";
+        if(x.equals("y")||x.equals("Y"))
+            return "01";
+        if(x.equals("sp")||x.equals("SP"))
+            return "10";
+        if(x.equals("pc")||x.equals("PC"))
+            return "11";
+        return "";
     }
     public String imprimirComandosCortos()
     {
