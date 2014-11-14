@@ -504,7 +504,7 @@ public class Linea {
                     String resultHex = Integer.toHexString(value);
                     resultHex = completarHexadecimal(resultHex, 2);
                     String result = "111"+ sustituirRegistro(sub[1].substring(0, sub[1].length()-1))+"011";
-                    int fin = Integer.parseInt(result);
+                    int fin = Integer.parseInt(result,2);
                     result = Integer.toHexString(fin);
                     codMaq = codMaq.substring(0, 2)+result+resultHex;
                     break;
@@ -520,7 +520,7 @@ public class Linea {
                     codMaq = codigo.modosDir.get(i).codMaq;
                     sub = operando.split(",");
                     String result = "111"+ sustituirRegistro(sub[1].substring(0, sub[1].length()-1))+"111";
-                    int fin = Integer.parseInt(result);
+                    int fin = Integer.parseInt(result,2);
                     result = Integer.toHexString(fin);
                     codMaq = codMaq.substring(0, 2)+result;
                     break;
