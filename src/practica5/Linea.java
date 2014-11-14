@@ -490,22 +490,39 @@ public class Linea {
                     codMaq = codigo.modosDir.get(i).codMaq;
                     break;
                 }
+                
             }
             if(codigo.modosDir.get(i).tipo.equals("[IDX2]"))
             {
-                if(DirIdxInd())
+                value = DirIdxInd();
+                if(value != Integer.MIN_VALUE)
                 {
+                    String sub[];
                     tam = codigo.modosDir.get(i).tamanho;
                     codMaq = codigo.modosDir.get(i).codMaq;
+                    sub = operando.split(",");
+                    String resultHex = Integer.toHexString(value);
+                    resultHex = completarHexadecimal(resultHex, 2);
+                    String result = "111"+ sustituirRegistro(sub[1].substring(0, sub[1].length()-1))+"011";
+                    int fin = Integer.parseInt(result);
+                    result = Integer.toHexString(fin);
+                    codMaq = codMaq.substring(0, 2)+result+resultHex;
                     break;
                 }
             }
             if(codigo.modosDir.get(i).tipo.equals("[D,IDX]"))
             {
-                if(DirIdxAcumD())
+                value = DirIdxAcumD();
+                if(value != Integer.MIN_VALUE)
                 {
+                    String sub[];
                     tam = codigo.modosDir.get(i).tamanho;
                     codMaq = codigo.modosDir.get(i).codMaq;
+                    sub = operando.split(",");
+                    String result = "111"+ sustituirRegistro(sub[1].substring(0, sub[1].length()-1))+"111";
+                    int fin = Integer.parseInt(result);
+                    result = Integer.toHexString(fin);
+                    codMaq = codMaq.substring(0, 2)+result;
                     break;
                 }
             }      
@@ -616,6 +633,7 @@ public class Linea {
         }
         return Integer.MIN_VALUE;
     }
+    
     private boolean DirIdxI_D()
     {
         String ERIdxI_D = "^([1-8])(,)(-|\\+){0,1}([xX]|[yY]|sp|SP)(-|\\+){0,1}";
@@ -654,33 +672,44 @@ public class Linea {
         String ERIdx2 = "(\\d{3,5}|-|,|)(\\d{3,5})(,){0,1}([xX]|[yY]|sp|SP|pc|PC)";
         if(operando.matches(ERIdx2)){
             dir = "IDX2";
-            tamanho = "4";
-            tam = 4;
-            return true;
+            tamanho = "2";
+            tam = 2;
+                return true;
         }
         return false;
     }
-    private boolean DirIdxInd()
+    private int DirIdxInd()
     {
         String ERIdxInd = "^\\[(\\d{0,5}|,|)(\\d|[a-z]|[A-Z]){1,2},{0,1}([xX]|[yY]|sp|SP|pc|PC)\\]";
         if(operando.matches(ERIdxInd)){
-            dir = "[IDX2]";
-            tamanho = "4";
-            tam = 4;
-            return true;
+            String sub[];
+            sub = operando.split(",");
+            int res = Integer.parseInt(sub[0].substring(1, sub[0].length()));
+            if(res>= 0 && res <= 65535){
+                dir = "[IDX2]";
+                //tamanho = "2";
+                //tam = 2;
+                return res;
+            }
         }
-        return false;
+        return Integer.MIN_VALUE;
     }    
-    private boolean DirIdxAcumD()
+    private int DirIdxAcumD()
     {
         String ERIdxAcumD   = "^(\\[)([d|D])(,)([xX]|[yY]|sp|SP|pc|PC)(\\])";
         if(operando.matches(ERIdxAcumD)){
-            dir = "[D,IDX]";
-            tamanho = "4";
-            tam = 4;
-            return true;
+            String sub[];
+            sub = operando.split(",");
+            String res = sub[0].substring(1, sub[0].length());
+            if(res.matches("D")){
+                int valor = 1;
+                dir = "[D,IDX]";
+                //tamanho = "2";
+                //tam = 2;
+                return valor;
+            }
         }
-        return false;
+        return Integer.MIN_VALUE;
     }
     public String CompletaBinario(int value, String x, int t){
         String ret = "";
