@@ -455,7 +455,6 @@ public class Linea {
             }
             if(codigo.modosDir.get(i).tipo.equals("IDX"))
             {
-                // no hay sustituciones en el cod maq??? se gurada completo??
                 value = DirIndexado();
                 if(value!= Integer.MIN_VALUE)
                 {
@@ -472,22 +471,65 @@ public class Linea {
                     
                     break;
                 }
-            }
-            if(codigo.modosDir.get(i).tipo.equals("IDX1"))
-            {
-                if(DirIdx1())
+                if(DirIdxI_PPD())
                 {
                     tam = codigo.modosDir.get(i).tamanho;
                     codMaq = codigo.modosDir.get(i).codMaq;
                     break;
                 }
+                if(DirIdxAcum_Idx())
+                {
+                    String sub[], resultRegIdx ,result;
+                    tam = codigo.modosDir.get(i).tamanho;
+                    codMaq = codigo.modosDir.get(i).codMaq;
+                    sub = operando.split(",");
+                    resultRegIdx = sustituirRegistroIdx(sub[0]);
+                    result = sustituirRegistro(sub[1]);
+                    result = "111"+result+"1"+resultRegIdx;
+                    int fin = Integer.parseInt(result);
+                    result = Integer.toHexString(fin);
+                    codMaq = codMaq.substring(0,2)+result;
+                    
+                    break;
+                }
+            }
+            if(codigo.modosDir.get(i).tipo.equals("IDX1"))
+            {
+                value = DirIdx1();
+                if(value != Integer.MIN_VALUE)
+                {
+                    String s,sub[],result;
+                    tam = codigo.modosDir.get(i).tamanho;
+                    codMaq = codigo.modosDir.get(i).codMaq;
+                    sub = operando.split(",");
+                    if(value <= 0){
+                        s = "1";
+                        value = value * -1;
+                    }
+                    else
+                        s = "0";
+                    result = "111"+sustituirRegistro(sub[1])+"00"+s;
+                    int fin = Integer.parseInt(result,2);
+                    result = Integer.toHexString(fin);
+                    codMaq = codMaq.substring(0,2)+result+Integer.toHexString(value);
+                    break;
+                }
             }
             if(codigo.modosDir.get(i).tipo.equals("IDX2"))
             {
-                if(DirIdx2())
+                value = DirIdx2();
+                if(value != Integer.MIN_VALUE)
                 {
+                    String s = "0",z="1",sub[],result,resultHex;
                     tam = codigo.modosDir.get(i).tamanho;
                     codMaq = codigo.modosDir.get(i).codMaq;
+                    sub = operando.split(",");
+                    result = "111"+sustituirRegistro(sub[1])+"0"+z+s;
+                    int fin = Integer.parseInt(result,2);
+                    result = Integer.toHexString(fin);
+                    resultHex = Integer.toHexString(value);
+                    resultHex = completarHexadecimal(resultHex, 2);
+                    codMaq = codMaq.substring(0,2)+result+resultHex;
                     break;
                 }
                 
@@ -520,7 +562,7 @@ public class Linea {
                     codMaq = codigo.modosDir.get(i).codMaq;
                     sub = operando.split(",");
                     String result = "111"+ sustituirRegistro(sub[1].substring(0, sub[1].length()-1))+"111";
-                    int fin = Integer.parseInt(result,2);
+                    int fin = Integer.parseInt(result);
                     result = Integer.toHexString(fin);
                     codMaq = codMaq.substring(0, 2)+result;
                     break;
@@ -634,10 +676,10 @@ public class Linea {
         return Integer.MIN_VALUE;
     }
     
-    private boolean DirIdxI_D()
+    private boolean DirIdxI_PPD()
     {
-        String ERIdxI_D = "^([1-8])(,)(-|\\+){0,1}([xX]|[yY]|sp|SP)(-|\\+){0,1}";
-        if(operando.matches(ERIdxI_D)){
+        String ERIdxI_PPD = "^([1-8])(,)(-|\\+){0,1}([xX]|[yY]|sp|SP)(-|\\+){0,1}";
+        if(operando.matches(ERIdxI_PPD)){
             dir = "IDX";
             tamanho = "2";
             tam = 2;
@@ -645,42 +687,52 @@ public class Linea {
         }
         return false;
     }
-    private boolean DirIdxAcum()
+    private boolean DirIdxAcum_Idx()
     {
-        String ERIdxAcum    = "^([a|A]|[b|B]|[d|D])(,)([xX]|[yY]|sp|SP|pc|PC)";
-        if(operando.matches(ERIdxAcum)){
+        String ERIdxAcum_Idx    = "^([a|A]|[b|B]|[d|D])(,)([xX]|[yY]|sp|SP|pc|PC)";
+        if(operando.matches(ERIdxAcum_Idx)){
             dir = "IDX";
-            tamanho = "2";
-            tam = 2;
+            //tamanho = "2";
+            //tam = 2;
             return true;
         }
         return false;
     }
-    private boolean DirIdx1()
+    private int DirIdx1()
     {
         String ERIdx1 = "-{0,1}(\\d{1,3}|)(,){0,1}([xX]|[yY]|sp|SP|pc|PC)";
         if(operando.matches(ERIdx1)){
-            dir = "IDX1";
-            tamanho = "3";
-            tam = 3;
-            return true;
+            String sub[];
+            sub = operando.split(",");
+            int res = Integer.parseInt(sub[0]);
+            if(res >= -256 && res <= 255){
+                dir = "IDX1";
+                //tamanho = "3";
+                //tam = 3;
+                return res;
+            }
         }
-        return false;
+        return Integer.MIN_VALUE;
     }
-    private boolean DirIdx2()
+    private int DirIdx2()
     {
         String ERIdx2 = "(\\d{3,5}|-|,|)(\\d{3,5})(,){0,1}([xX]|[yY]|sp|SP|pc|PC)";
         if(operando.matches(ERIdx2)){
+            String sub[];
+            sub = operando.split(",");
+            int res = Integer.parseInt(sub[0]);
+            if(res >= -256 && res <= 255){
             dir = "IDX2";
-            tamanho = "2";
-            tam = 2;
-                return true;
+            //tamanho = "2";
+            //tam = 2;
+            }
+                return res;
         }
-        return false;
+        return Integer.MIN_VALUE;
     }
     private int DirIdxInd()
     {
-        String ERIdxInd = "^\\[(\\d{0,5}|,|)(\\d|[a-z]|[A-Z]){1,2},{0,1}([xX]|[yY]|sp|SP|pc|PC)\\]";
+        String ERIdxInd = "^\\[(\\d{0,5}|,|),{0,1}([xX]|[yY]|sp|SP|pc|PC)\\]";
         if(operando.matches(ERIdxInd)){
             String sub[];
             sub = operando.split(",");
@@ -748,6 +800,16 @@ public class Linea {
         return res;
     }
     
+    public String sustituirRegistroIdx(String x){
+        if(x.equals("a")||x.equals("A"))
+                return "00";
+        if(x.equals("b")||x.equals("B"))
+                return "01";
+        if(x.equals("d")||x.equals("D"))
+                return "10";
+        return "";
+    }
+    
     public String sustituirRegistro(String x){
         if(x.equals("x")||x.equals("X"))
             return "00";
@@ -773,7 +835,7 @@ public class Linea {
         salida += "Tipo de Dir: " + dir + "\n";
         salida += "Sist Num: " + sistNum + "\n";
         salida += "Comentario: " + comentario + "\n";
-        salida += "Tamaño: " + tamanho + "\n";
+        salida += "Tamaño: " + tam + "\n";
         salida += "Codigo Maquina: " + codMaq + "\n";
         salida += "Errores: "+ errores + "\n\n";
         
