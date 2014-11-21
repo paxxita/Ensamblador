@@ -8,20 +8,22 @@ public class Linea {
     String codop = " ";
     String operando = " "; 
     String comentario = " ";
-    String aux = "";
     
     int tam = 0;
-    String tamanho = " ";
     String dir = " ";
     String sistNum = " ";
     String codMaq = " ";
    
+    int contLoc = 0; 
+    String contLocHex = " ";
+    
     boolean errorEtiqueta;
     boolean errorCodop;
     boolean errorOperando;
     boolean esComentario;
     
     String errores = "";
+    String impresion = "";
     
     public Linea (String linea)
     {
@@ -183,6 +185,14 @@ public class Linea {
             if(errorCodop)
                 errores += "El codigo de operacion es invalido\n";
         }
+        else
+        {
+            if(!esComentario)
+            {
+                errorCodop = true;
+                errores += "Siempre debe existir un codigo de operacion\n";
+            }
+        }
     }
     private void analizarOperando()
     {
@@ -220,6 +230,62 @@ public class Linea {
         }
         else sistNum = " ";
     }   
+    
+    private boolean esEtiqueta(String x)
+    {
+        if(x.matches("^(_|[aA-zZ])\\w{1,32}"))
+            return true; 
+        return false;
+    }
+            
+    public int ensamblarPrimerPaso(HashMap<String,String> simbolos, CodigoOperacion codigo, int cont)
+    {
+        int contActualizado = cont;
+        if(!codop.equals(" ")){
+            if(esDirectiva())
+            {
+                contActualizado = validarDirectiva(simbolos, cont);
+            }
+            else
+            {            
+                validarCodOp(simbolos, codigo);       
+            
+                if(!errorCodop)
+                {
+                    agregarEtiqueta(simbolos, cont);
+                    contActualizado = validarOperando(simbolos, codigo, cont);
+                }
+            }
+        }
+        return contActualizado;
+    }
+    public void ensamblarSegundoPaso(HashMap<String,String> simbolos, CodigoOperacion codigo)
+    {
+        if(esDirectiva())
+        {
+            
+        }
+        else
+        {
+            if(dir.equals("EXT")||dir.equals("EXT1"))
+            {
+                if((codMaq.length()/2)!= tam){
+                    if(simbolos.containsKey(operando)){
+                        codMaq += simbolos.get(operando);
+                    }
+                }
+            }   
+        }
+    }
+    public void agregarEtiqueta(HashMap<String, String> simbolos, int cont)
+    {
+        if(!etiqueta.equals(" ") && !simbolos.containsKey(etiqueta))
+        {
+            contLoc = cont;
+            contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+            simbolos.put(etiqueta, contLocHex);
+        }
+    }
     public boolean esDirectiva()
     {
         if(!codop.equals(" ")){
@@ -243,17 +309,33 @@ public class Linea {
         }
         return false;
     }
-    public void validarDirectiva(HashMap<String, String> simbolos){
+    public int validarDirectiva(HashMap<String, String> simbolos, int cont){
         
+        int contActualizado = cont;
+        if(codop.equalsIgnoreCase("END"))
+        {
+            contLoc = cont;
+            contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+            impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+        }
         if(codop.equalsIgnoreCase("ORG"))
         {   
-            tam = 0;         
+            tam = 0;
+            contLoc = convertirDecimal(operando);
+            contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+            impresion = "DIR_INIC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();
+            
+            contActualizado = contLoc;
         }
         else if(codop.equalsIgnoreCase("DB")||codop.equalsIgnoreCase("DC.B")||codop.equalsIgnoreCase("FCB"))
         {
             int valor = convertirDecimal(operando);
             if(valor <= 255){
                 tam = 1;
+                contLoc = cont;
+                contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                contActualizado += tam;
             }
             else {
                 errorOperando = true;
@@ -265,6 +347,10 @@ public class Linea {
             int valor = convertirDecimal(operando);
             if(valor <= 65535){
                 tam = 2;
+                contLoc = cont;
+                contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                contActualizado += tam;
             }
             else {
                 errorOperando = true;
@@ -275,6 +361,10 @@ public class Linea {
         {   
             if(operando.charAt(0)=='"' && operando.charAt(operando.length()-1)=='"'){
                 tam = operando.length() - 2;
+                contLoc = cont;
+                contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                contActualizado += tam;
             }
             else{
                 errorOperando = true;
@@ -286,6 +376,10 @@ public class Linea {
             int valor = convertirDecimal(operando);
             if(valor <= 65535){
                 tam = valor;
+                contLoc = cont;
+                contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                contActualizado += tam;
             }
             else {
                 errorOperando = true;
@@ -297,6 +391,10 @@ public class Linea {
             int valor = convertirDecimal(operando);
             if(valor <= 65535){
                 tam = valor * 2;
+                contLoc = cont;
+                contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                contActualizado += tam;
             }
             else{
                 errorOperando = true;
@@ -310,9 +408,11 @@ public class Linea {
             {
                 if(!simbolos.containsKey(etiqueta)){
                     tam = 2;  
-                    String hex = Integer.toHexString(valor);
-                    hex = completarHexadecimal(hex, tam);
-                    simbolos.put(etiqueta, hex);
+                    contLoc = valor;
+                    contLocHex = Integer.toHexString(valor);
+                    contLocHex = completarHexadecimal(contLocHex, tam);
+                    simbolos.put(etiqueta, contLocHex);
+                    impresion = "VALOR EQU \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();
                 }
                 else{
                     errorOperando = true;
@@ -329,8 +429,9 @@ public class Linea {
                 errores += "Debe contener etiqueta \n";
             }
         }
+        return contActualizado;
     }
-    public void validarCodOp(CodigoOperacion codigo, HashMap<String, String> simbolos)
+    public void validarCodOp(HashMap<String, String> simbolos, CodigoOperacion codigo)
     {
         if(codigo == null)
         {
@@ -339,16 +440,11 @@ public class Linea {
                 errorCodop = true;
                 errores += "Codigo de Operacion no encontrado\n";
             }
-        }
-        else{
-            if(codigo.codigo.equals(codop))
-            {   
-                validarOperando(codigo, simbolos);
-            }
-        }
+        }   
     }
-    public void validarOperando(CodigoOperacion codigo, HashMap<String,String> simbolos)
+    public int validarOperando(HashMap<String,String> simbolos, CodigoOperacion codigo, int cont)
     {
+        int contActualizado = cont;
         int value;
         for(int i = 0; i < codigo.modosDir.size(); i++)
         {
@@ -358,6 +454,10 @@ public class Linea {
                 {
                     codMaq = codigo.modosDir.get(i).codMaq;
                     tam = codigo.modosDir.get(i).tamanho;
+                    contLoc = cont;
+                    contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                    impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                    contActualizado += tam;
                     break;
                 }
             }
@@ -371,6 +471,10 @@ public class Linea {
                     String hex = Integer.toHexString(value);
                     hex = completarHexadecimal(hex, tam - 1);
                     codMaq += hex;
+                    contLoc = cont;
+                    contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                    impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                    contActualizado += tam;
                     break;
                 }
             }
@@ -384,6 +488,10 @@ public class Linea {
                     String hex = Integer.toHexString(value);
                     hex = completarHexadecimal(hex, tam - 1);
                     codMaq += hex;
+                    contLoc = cont;
+                    contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                    impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                    contActualizado += tam;
                     break;
                 }
             }
@@ -397,6 +505,10 @@ public class Linea {
                     String hex = Integer.toHexString(value);
                     hex = completarHexadecimal(hex, tam - 1);
                     codMaq += hex;
+                    contLoc = cont;
+                    contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                    impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                    contActualizado += tam;
                     break;
                 }
             }
@@ -410,6 +522,10 @@ public class Linea {
                     String hex = Integer.toHexString(value);
                     hex = completarHexadecimal(hex, tam - 1);
                     codMaq += hex;
+                    contLoc = cont;
+                    contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                    impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                    contActualizado += tam;
                     break;
                 }
             }
@@ -423,13 +539,33 @@ public class Linea {
                     String hex = Integer.toHexString(value);
                     hex = completarHexadecimal(hex, tam - 1);
                     codMaq += hex;
+                    contLoc = cont;
+                    contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                    impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                    contActualizado += tam;
                     break;
                 }
                 else if(simbolos.containsKey(operando))
                 {
+                    dir = "EXT";
                     tam = codigo.modosDir.get(i).tamanho;
                     codMaq = codigo.modosDir.get(i).codMaq.substring(0, 2);
                     codMaq += simbolos.get(operando);
+                    contLoc = cont;
+                    contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                    impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                    contActualizado += tam;
+                    break;
+                }
+                else if(esEtiqueta(operando))
+                {
+                    dir = "EXT";
+                    tam = codigo.modosDir.get(i).tamanho;
+                    codMaq = codigo.modosDir.get(i).codMaq.substring(0, 2);
+                    contLoc = cont;
+                    contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                    impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                    contActualizado += tam;
                     break;
                 }
             }
@@ -443,13 +579,33 @@ public class Linea {
                     String hex = Integer.toHexString(value);
                     hex = completarHexadecimal(hex, tam - 1);
                     codMaq += hex;
+                    contLoc = cont;
+                    contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                    impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                    contActualizado += tam;
                     break;
                 }
                 else if(simbolos.containsKey(operando))
                 {
+                    dir = "EXT1";
                     tam = codigo.modosDir.get(i).tamanho;
                     codMaq = codigo.modosDir.get(i).codMaq.substring(0, 2);
                     codMaq += simbolos.get(operando);
+                    contLoc = cont;
+                    contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                    impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                    contActualizado += tam;
+                    break;
+                }
+                else if(esEtiqueta(operando))
+                {
+                    dir = "EXT1";
+                    tam = codigo.modosDir.get(i).tamanho;
+                    codMaq = codigo.modosDir.get(i).codMaq.substring(0, 2);
+                    contLoc = cont;
+                    contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                    impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                    contActualizado += tam;
                     break;
                 }
             }
@@ -460,15 +616,18 @@ public class Linea {
                 {
                     String sub[];
                     tam = codigo.modosDir.get(i).tamanho;
-                    codMaq = codigo.modosDir.get(i).codMaq;
+                    codMaq = codigo.modosDir.get(i).codMaq.substring(0, 2);
                     sub = operando.split(",");
                     String result = Integer.toBinaryString(value);
-                    result = CompletaBinario(value, result, 5);
-                    result= sustituirRegistro(sub[1])+"0"+result;
+                    result = completaBinario(value, result, 5);
+                    result = sustituirRegistro(sub[1])+"0"+result;
                     int fin = Integer.parseInt(result,2);
                     result = Integer.toHexString(fin);
-                    codMaq = codMaq.substring(0, 2)+ result;
-                    
+                    codMaq += result;
+                    contLoc = cont;
+                    contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                    impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                    contActualizado += tam;
                     break;
                 }
                 if(DirIdxI_PPD())
@@ -481,15 +640,18 @@ public class Linea {
                 {
                     String sub[], resultRegIdx ,result;
                     tam = codigo.modosDir.get(i).tamanho;
-                    codMaq = codigo.modosDir.get(i).codMaq;
+                    codMaq = codigo.modosDir.get(i).codMaq.substring(0, 2);
                     sub = operando.split(",");
                     resultRegIdx = sustituirRegistroIdx(sub[0]);
                     result = sustituirRegistro(sub[1]);
                     result = "111"+result+"1"+resultRegIdx;
                     int fin = Integer.parseInt(result);
                     result = Integer.toHexString(fin);
-                    codMaq = codMaq.substring(0,2)+result;
-                    
+                    codMaq += result;
+                    contLoc = cont;
+                    contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                    impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                    contActualizado += tam;
                     break;
                 }
             }
@@ -500,18 +662,21 @@ public class Linea {
                 {
                     String s,sub[],result;
                     tam = codigo.modosDir.get(i).tamanho;
-                    codMaq = codigo.modosDir.get(i).codMaq;
+                    codMaq = codigo.modosDir.get(i).codMaq.substring(0, 2);
                     sub = operando.split(",");
                     if(value <= 0){
                         s = "1";
                         value = value * -1;
                     }
-                    else
-                        s = "0";
-                    result = "111"+sustituirRegistro(sub[1])+"00"+s;
+                    else s = "0";
+                    result = "111" + sustituirRegistro(sub[1]) + "00" + s;
                     int fin = Integer.parseInt(result,2);
                     result = Integer.toHexString(fin);
-                    codMaq = codMaq.substring(0,2)+result+Integer.toHexString(value);
+                    codMaq += result + Integer.toHexString(value);
+                    contLoc = cont;
+                    contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                    impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                    contActualizado += tam;
                     break;
                 }
             }
@@ -520,19 +685,22 @@ public class Linea {
                 value = DirIdx2();
                 if(value != Integer.MIN_VALUE)
                 {
-                    String s = "0",z="1",sub[],result,resultHex;
+                    String s = "0", z = "1", sub[], result, resultHex;
                     tam = codigo.modosDir.get(i).tamanho;
-                    codMaq = codigo.modosDir.get(i).codMaq;
+                    codMaq = codigo.modosDir.get(i).codMaq.substring(0, 2);
                     sub = operando.split(",");
-                    result = "111"+sustituirRegistro(sub[1])+"0"+z+s;
+                    result = "111"+sustituirRegistro(sub[1]) + "0" + z + s;
                     int fin = Integer.parseInt(result,2);
                     result = Integer.toHexString(fin);
                     resultHex = Integer.toHexString(value);
                     resultHex = completarHexadecimal(resultHex, 2);
-                    codMaq = codMaq.substring(0,2)+result+resultHex;
+                    codMaq += result + resultHex;
+                    contLoc = cont;
+                    contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                    impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                    contActualizado += tam;
                     break;
-                }
-                
+                }                
             }
             if(codigo.modosDir.get(i).tipo.equals("[IDX2]"))
             {
@@ -541,14 +709,18 @@ public class Linea {
                 {
                     String sub[];
                     tam = codigo.modosDir.get(i).tamanho;
-                    codMaq = codigo.modosDir.get(i).codMaq;
+                    codMaq = codigo.modosDir.get(i).codMaq.substring(0, 2);
                     sub = operando.split(",");
                     String resultHex = Integer.toHexString(value);
                     resultHex = completarHexadecimal(resultHex, 2);
                     String result = "111"+ sustituirRegistro(sub[1].substring(0, sub[1].length()-1))+"011";
                     int fin = Integer.parseInt(result,2);
                     result = Integer.toHexString(fin);
-                    codMaq = codMaq.substring(0, 2)+result+resultHex;
+                    codMaq += result + resultHex;
+                    contLoc = cont;
+                    contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                    impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                    contActualizado += tam;
                     break;
                 }
             }
@@ -559,22 +731,28 @@ public class Linea {
                 {
                     String sub[];
                     tam = codigo.modosDir.get(i).tamanho;
-                    codMaq = codigo.modosDir.get(i).codMaq;
+                    codMaq = codigo.modosDir.get(i).codMaq.substring(0, 2);
                     sub = operando.split(",");
                     String result = "111"+ sustituirRegistro(sub[1].substring(0, sub[1].length()-1))+"111";
                     int fin = Integer.parseInt(result);
                     result = Integer.toHexString(fin);
-                    codMaq = codMaq.substring(0, 2)+result;
+                    codMaq += result;
+                    contLoc = cont;
+                    contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                    impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                    contActualizado += tam;
                     break;
                 }
             }      
         }   
-        if(dir.equals(" "))
+        /*if(dir.equals(" "))
         {   
             errorOperando = true;
             errores += "Operando no valido para el direccionamiento \n";
-        }
+        }*/
+        return contActualizado;
     }
+    
     private boolean DirInh()
     {
         if(operando.equals(" ")){
@@ -585,11 +763,10 @@ public class Linea {
     }
     private int DirInmediato()
     {
-        //String ERInmediato  = "[#][%|$|@]{0,1}\\d+";
         if(operando.matches("#@[0-7]+")||operando.matches("#%[0-1]+")||
                 operando.matches("#$(\\d|[a-f|A-F])+")||operando.matches("#\\d+")){
             int value = convertirDecimal(operando.substring(1));
-            //if(value < rango){}
+   
             dir = "IMM";
             return value;
         }
@@ -597,11 +774,10 @@ public class Linea {
     }
     private int DirInmediato8()
     {
-        //String ERInmediato  = "[#][%|$|@]{0,1}\\d+";
         if(operando.matches("#@[0-7]+")||operando.matches("#%[0-1]+")||
                 operando.matches("#$(\\d|[a-f|A-F])+")||operando.matches("#\\d+")){
             int value = convertirDecimal(operando.substring(1));
-            //if rango  
+            
             dir = "IMM8";
             return value;
         }
@@ -609,11 +785,10 @@ public class Linea {
     }
     private int DirInmediato16()
     {
-        //String ERInmediato  = "[#][%|$|@]{0,1}\\d+";
         if(operando.matches("#@[0-7]+")||operando.matches("#%[0-1]+")||
                 operando.matches("#$(\\d|[a-f|A-F])+")||operando.matches("#\\d+")){
             int value = convertirDecimal(operando.substring(1));
-            //if
+            
             dir = "IMM16";
             return value;
         }
@@ -621,7 +796,6 @@ public class Linea {
     }
     private int DirDirecto()
     {
-        //String ERDirecto = "[$|%|@]*(\\d|[a-f|A-F]){1,2}"; //"\\$([a-f]|[A-F]){1,2}|%([0-1]){1,8}|@[0-7]{0,3}|\\d{1,3}";
         if(operando.matches("@[0-7]{1,3}")||operando.matches("%[0-1]{1,8}")||
                 operando.matches("$(\\d|[a-f|A-F]){1,2}")||operando.matches("\\d{1,3}")){
             int value = convertirDecimal(operando);
@@ -634,7 +808,6 @@ public class Linea {
     }
     private int DirExtendido()
     {
-        //String ERExtendido = "(([$|%|@]{0,1}([a-f]|[A-F]|\\d){3,5})|(^([a-z]|[A-Z]|_)\\w*))";
         if(operando.matches("@[0-7]{3,6}")||operando.matches("%[0-1]{9,16}")||
                 operando.matches("$(\\d|[a-f|A-F]){3,4}")||operando.matches("\\d{3,5}")){
             int value = convertirDecimal(operando);
@@ -647,7 +820,6 @@ public class Linea {
     }
     private int DirExtendido1()
     {
-        //String ERExtendido = "(([$|%|@]{0,1}([a-f]|[A-F]|\\d){3,5})|(^([a-z]|[A-Z]|_)\\w*))";
         if(operando.matches("@[0-7]{1,6}")||operando.matches("%[0-1]{1,16}")||
                 operando.matches("$(\\d|[a-f|A-F]){1,4}")||operando.matches("(\\d){1,5}")){
             int value = convertirDecimal(operando);
@@ -661,15 +833,13 @@ public class Linea {
     
     private int DirIndexado()
     {
-        String ERIndexado = "(-{0,1}\\d{1,3}){0,1},([xX]|[yY]|sp|SP|pc|PC){0,1}";
+        String ERIndexado = "(-{0,1}\\d{1,3}){0,1},([xX]|[yY]|sp|SP|pc|PC){0,1}"; //pueden no estar los registros ???
         if(operando.matches(ERIndexado)){
             String sub[];
             sub = operando.split(",");
             int res = Integer.parseInt(sub[0]);
-            if(res>=-16 && res<=15){
+            if(res >= -16 && res <= 15){
                 dir = "IDX";
-                //tamanho = "2";
-                //tam = 2;
                 return res;
             }
         }
@@ -681,19 +851,15 @@ public class Linea {
         String ERIdxI_PPD = "^([1-8])(,)(-|\\+){0,1}([xX]|[yY]|sp|SP)(-|\\+){0,1}";
         if(operando.matches(ERIdxI_PPD)){
             dir = "IDX";
-            tamanho = "2";
-            tam = 2;
             return true;
         }
         return false;
     }
     private boolean DirIdxAcum_Idx()
     {
-        String ERIdxAcum_Idx    = "^([a|A]|[b|B]|[d|D])(,)([xX]|[yY]|sp|SP|pc|PC)";
+        String ERIdxAcum_Idx = "^([a|A]|[b|B]|[d|D])(,)([xX]|[yY]|sp|SP|pc|PC)";
         if(operando.matches(ERIdxAcum_Idx)){
             dir = "IDX";
-            //tamanho = "2";
-            //tam = 2;
             return true;
         }
         return false;
@@ -707,8 +873,6 @@ public class Linea {
             int res = Integer.parseInt(sub[0]);
             if(res >= -256 && res <= 255){
                 dir = "IDX1";
-                //tamanho = "3";
-                //tam = 3;
                 return res;
             }
         }
@@ -722,11 +886,9 @@ public class Linea {
             sub = operando.split(",");
             int res = Integer.parseInt(sub[0]);
             if(res >= -256 && res <= 255){
-            dir = "IDX2";
-            //tamanho = "2";
-            //tam = 2;
-            }
+                dir = "IDX2";
                 return res;
+            }
         }
         return Integer.MIN_VALUE;
     }
@@ -739,8 +901,6 @@ public class Linea {
             int res = Integer.parseInt(sub[0].substring(1, sub[0].length()));
             if(res>= 0 && res <= 65535){
                 dir = "[IDX2]";
-                //tamanho = "2";
-                //tam = 2;
                 return res;
             }
         }
@@ -756,14 +916,13 @@ public class Linea {
             if(res.matches("D")){
                 int valor = 1;
                 dir = "[D,IDX]";
-                //tamanho = "2";
-                //tam = 2;
                 return valor;
             }
         }
         return Integer.MIN_VALUE;
     }
-    public String CompletaBinario(int value, String x, int t){
+    
+    public String completaBinario(int value, String x, int t){
         String ret = "";
         String completar = ((value >= 0)?"0":"1");
         for(int i = 0; i < (t - x.length()); i++)
