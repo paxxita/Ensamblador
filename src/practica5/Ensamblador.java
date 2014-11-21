@@ -36,7 +36,7 @@ public class Ensamblador extends javax.swing.JFrame {
             }
         });
 
-        jtxtFile.setText("C:\\\\Users\\\\irena\\\\Desktop\\\\");
+        jtxtFile.setText("C:\\\\Users\\\\Rogelio\\\\Desktop\\\\");
             jtxtFile.addActionListener(new java.awt.event.ActionListener() {
                 public void actionPerformed(java.awt.event.ActionEvent evt) {
                     jtxtFileActionPerformed(evt);
@@ -56,7 +56,7 @@ public class Ensamblador extends javax.swing.JFrame {
 
             jLabel2.setText("TabOp:");
 
-            jTxtTabop.setText("C:\\\\Users\\\\irena\\\\Desktop\\\\TABOP.txt");
+            jTxtTabop.setText("C:\\\\Users\\\\Rogelio\\\\Desktop\\\\TABOP.txt");
 
             javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
             getContentPane().setLayout(layout);

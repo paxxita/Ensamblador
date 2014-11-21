@@ -1,6 +1,7 @@
 package practica5;
 
 import java.util.HashMap;
+import java.util.Locale;
 
 public class Linea {
     
@@ -658,7 +659,12 @@ public class Linea {
                     codMaq = codigo.modosDir.get(i).codMaq.substring(0, 2);
                     sub = operando.split(",");
                     String result = Integer.toBinaryString(value);
-                    result = completaBinario(value, result, 5);
+                    if(value < 0){
+                        result = result.substring(result.length()-5, result.length());
+                    }
+                    else{
+                        result = completaBinario(value, result, 5);
+                    }
                     result = sustituirRegistro(sub[1])+"0"+result;
                     int fin = Integer.parseInt(result,2);
                     result = Integer.toHexString(fin);
@@ -671,8 +677,33 @@ public class Linea {
                 }
                 if(DirIdxI_PPD())
                 {
+                    String sub[],p="",resultNumero="", registro="", result;
                     tam = codigo.modosDir.get(i).tamanho;
-                    codMaq = codigo.modosDir.get(i).codMaq;
+                    codMaq = codigo.modosDir.get(i).codMaq.substring(0, 2);
+                    sub = operando.split(",");
+                    String signoPost = sub[1].substring(sub[1].length()-1, sub[1].length());
+                    String signoPre = sub[1].substring(0, 1);
+                    if(signoPost.equals("+") || signoPost.equals("+")){
+                        p = "1";
+                        resultNumero = cambiaNumero(signoPost,sub[0]);
+                        registro = sub[1].substring(0, sub[1].length()-1);
+                    }
+                    if(signoPre.equals("+") || signoPre.equals("-")){
+                        p = "0";
+                        resultNumero = cambiaNumero(signoPre, sub[0]);
+                        registro = sub[1].substring(1,sub[1].length());
+                    }
+                    
+                    result = sustituirRegistro(registro);
+                    result = result+"1"+p+resultNumero;
+                    int fin = Integer.parseInt(result,2);
+                    result = Integer.toHexString(fin);
+                    result = completarHexadecimal(result, 1);
+                    codMaq += result;
+                    contLoc = cont;
+                    contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                    impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                    contActualizado += tam;
                     break;
                 }
                 if(DirIdxAcum_Idx())
@@ -1007,6 +1038,47 @@ public class Linea {
                 return "01";
         if(x.equals("d")||x.equals("D"))
                 return "10";
+        return "";
+    }
+    
+    public String cambiaNumero(String signo, String numero){
+        
+        numero = signo+numero;
+        switch(numero){
+            case "+1":
+                return "0000";
+            case "+2":
+                return "0001";
+            case "+3":
+                return "0010";
+            case "+4":
+                return "0011";
+            case "+5":
+                return "0100";
+            case "+6":
+                return "0101";
+            case "+7":
+                return "0110";
+            case "+8":
+                return "0111";
+            case "-1":
+                return "1111";
+            case "-2":
+                return "1110";
+            case "-3":
+                return "1101";
+            case "-4":
+                return "1100";
+            case "-5":
+                return "1011";
+            case "-6":
+                return "1010";
+            case "-7":
+                return "1001";
+            case "-8":
+                return "1000";
+                
+        }
         return "";
     }
     
