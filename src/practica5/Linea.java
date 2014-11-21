@@ -274,7 +274,17 @@ public class Linea {
                         codMaq += simbolos.get(operando);
                     }
                 }
-            }   
+            }
+            if(dir.equals("REL8"))
+            {
+                if((codMaq.length()/2) != tam){
+                    if(simbolos.containsKey(operando)){
+                        int valor = Integer.parseInt(simbolos.get(operando), 16);
+                        valor = valor - contLoc - tam;
+                        codMaq += completarHexadecimal(Integer.toHexString(valor), 1);
+                    }
+                }
+            }
         }
     }
     public void agregarEtiqueta(HashMap<String, String> simbolos, int cont)
@@ -332,6 +342,7 @@ public class Linea {
             int valor = convertirDecimal(operando);
             if(valor <= 255){
                 tam = 1;
+                codMaq = completarHexadecimal(Integer.toHexString(valor),1);
                 contLoc = cont;
                 contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
                 impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
@@ -347,6 +358,7 @@ public class Linea {
             int valor = convertirDecimal(operando);
             if(valor <= 65535){
                 tam = 2;
+                codMaq = completarHexadecimal(Integer.toHexString(valor),2);
                 contLoc = cont;
                 contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
                 impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
@@ -361,6 +373,10 @@ public class Linea {
         {   
             if(operando.charAt(0)=='"' && operando.charAt(operando.length()-1)=='"'){
                 tam = operando.length() - 2;
+                for(int i = 1; i < operando.length()-1; i++)
+                {
+                    codMaq += Integer.toHexString((int)operando.charAt(i)) + " ";
+                }
                 contLoc = cont;
                 contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
                 impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
@@ -609,6 +625,29 @@ public class Linea {
                     break;
                 }
             }
+            if(codigo.modosDir.get(i).tipo.equals("REL8"))
+            {
+                if(esEtiqueta(operando))
+                {
+                    dir = "REL8";
+                    tam = codigo.modosDir.get(i).tamanho;
+                    codMaq = codigo.modosDir.get(i).codMaq.substring(0, 2);
+                    if(simbolos.containsKey(operando)){
+                        int valor = Integer.parseInt(simbolos.get(operando), 16);
+                        valor = valor - cont - tam;
+                        codMaq += completarHexadecimal(Integer.toHexString(valor), 1);
+                    }
+                    contLoc = cont;
+                    contLocHex = completarHexadecimal(Integer.toHexString(contLoc), 2);
+                    impresion = "CONT_LOC \t" + contLocHex.toUpperCase() + "\t" + imprimirComandosCortos();             
+                    contActualizado += tam;
+                    break;
+                }
+            }
+            if(codigo.modosDir.get(i).tipo.equals("REL16"))
+            {
+                
+            }
             if(codigo.modosDir.get(i).tipo.equals("IDX"))
             {
                 value = DirIndexado();
@@ -833,11 +872,11 @@ public class Linea {
     
     private int DirIndexado()
     {
-        String ERIndexado = "(-{0,1}\\d{1,3}){0,1},([xX]|[yY]|sp|SP|pc|PC){0,1}"; //pueden no estar los registros ???
+        String ERIndexado = "(-{0,1}\\d{1,3}){0,1},([xX]|[yY]|sp|SP|pc|PC){1}"; //pueden no estar los registros ???
         if(operando.matches(ERIndexado)){
             String sub[];
             sub = operando.split(",");
-            int res = Integer.parseInt(sub[0]);
+            int res = (sub[0].length()==0) ? 0 : Integer.parseInt(sub[0]);
             if(res >= -16 && res <= 15){
                 dir = "IDX";
                 return res;
@@ -925,8 +964,10 @@ public class Linea {
     public String completaBinario(int value, String x, int t){
         String ret = "";
         String completar = ((value >= 0)?"0":"1");
-        for(int i = 0; i < (t - x.length()); i++)
-            ret = ret + completar;
+        t = t - x.length();
+        for(int i = 0; i < t; i++){
+            ret += completar;
+        }
         ret = ret + x;
         return ret;
     }
