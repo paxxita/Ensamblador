@@ -273,6 +273,7 @@ public class Linea {
                 if((codMaq.length()/2)!= tam){
                     if(simbolos.containsKey(operando)){
                         codMaq += simbolos.get(operando);
+                        impresion = impresion.substring(0, impresion.length()-1)+ simbolos.get(operando)+ '\n';
                     }
                 }
             }
